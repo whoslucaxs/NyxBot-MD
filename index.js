@@ -6,6 +6,8 @@ const {
     WAProto,
     useSingleFileAuthState,
     MediaType,
+    MessageOptions,
+    Mimetype,
     DisconnectReason
 } = require('@adiwajshing/baileys-md')
 var pino = require("pino");
@@ -16,7 +18,27 @@ const moment = require('moment-timezone')
 const chalk = require('chalk')
 const CFonts  = require('cfonts')
 
-const { saveState, state } = useSingleFileAuthState('./session.json');
+
+const { help } = require('./database/menu/help')
+const { criador } = require('./database/menu/criador')
+const { faq } = require('./database/menu/faq')
+const { pix_txt } = require('./database/menu/pix')
+const option = JSON.parse(fs.readFileSync('./options/option.json'))
+
+const {
+    botName,
+    ownerName,
+    ownerNumber,
+    pix
+} = option
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 
 
 (async () => {
@@ -86,7 +108,7 @@ const { saveState, state } = useSingleFileAuthState('./session.json');
                 const groupName = isGroup ? groupMetadata.subject : ''
                 
                 const reply = (mensagem) => {
-                    client.sendMessage(from, { text: mensagem }, { quoted: msg });
+                    client.sendMessage(from, { text: mensagem });
                 }
 				
                 switch (command) {
@@ -100,11 +122,11 @@ const { saveState, state } = useSingleFileAuthState('./session.json');
 							]
 					
 							const ajuda = {
-						
-							text: `Estou aqui para facilitar a criação de adesivos para WhatsApp, sem precisar de sair do próprio WhatsApp!\n\nConsigo atuar em grupos ou em conversas privadas!\n\nE além de conseguir fazer os adesivos convencionais, também sou capaz de fazer adesivos animados.\n\nPara começar, basta clicar em algumas das seguintes opções:`,
+							image: {url: "./database/media/help.jpg"},
+							caption: `Estou aqui para facilitar a criação de adesivos para WhatsApp, sem precisar de sair do próprio WhatsApp!\n\nConsigo atuar em grupos ou em conversas privadas!\n\nE além de conseguir fazer os adesivos convencionais, também sou capaz de fazer adesivos animados.\n\nPara começar, basta clicar em algumas das seguintes opções:`,
 							footerText: 'Não consegue ver os botões? Mande $notas',
     						buttons: buttons,
-    						headerType: 1
+    						headerType: 4
     
 							}
 							client.sendMessage(from, ajuda) 
@@ -120,12 +142,47 @@ const { saveState, state } = useSingleFileAuthState('./session.json');
 							]
 
 							const nextpage = {
-								text: `Estou aqui para facilitar a criação de adesivos para WhatsApp, sem precisar de sair do próprio WhatsApp!\n\nConsigo atuar em grupos ou em conversas privadas!\n\nE além de conseguir fazer os adesivos convencionais, também sou capaz de fazer adesivos animados.\n\nPara começar, basta clicar em ajuda e escolher algumas dos seguintes opções:`,
+								image: {url: "./database/media/help.jpg"},
+								caption: `Estou aqui para facilitar a criação de adesivos para WhatsApp, sem precisar de sair do próprio WhatsApp!\n\nConsigo atuar em grupos ou em conversas privadas!\n\nE além de conseguir fazer os adesivos convencionais, também sou capaz de fazer adesivos animados.\n\nPara começar, basta clicar em ajuda e escolher algumas dos seguintes opções:`,
 								footerText: 'Não consegue ver os botões? Mande $notas',
     							buttons: buttons1,
-    							headerType: 1
+    							headerType: 4
 							}
 							client.sendMessage(from, nextpage) 
+							break
+						
+						case 'info':
+
+							const doacoes = [
+							
+							{buttonId: '$doação', buttonText: {displayText: "💰 DOAÇÕES "}, type: 1},
+							
+							]
+					
+							const sendDoacoes = {
+						
+								text: `${criador(pushname, botName, ownerName)}`,
+    							buttons: doacoes,
+    							headerType: 1
+    
+							}
+							client.sendMessage(from, sendDoacoes) 
+							
+							break
+						
+						case 'faq':
+				
+							client.sendMessage(from, { text: faq(pushname)})
+							break
+						
+						case 'doação':
+					
+							client.sendMessage(from, { text: pix_txt(pushname, botName, ownerName)})
+							await sleep(150)
+							reply("Chave Aleatória:")
+							await sleep(150)
+							reply(`${pix}`)
+							
 							break
 
 						}
