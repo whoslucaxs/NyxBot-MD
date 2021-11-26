@@ -14,13 +14,34 @@ const axios = require('axios').default
 const fs = require('fs')
 const moment = require('moment-timezone')
 const chalk = require('chalk')
+const CFonts  = require('cfonts')
 
 const { saveState, state } = useSingleFileAuthState('./session.json');
 
 
 (async () => {
+	CFonts.say('Nyx', {
+    font: 'block',
+    align: 'center',
+    gradient: ['green', 'magenta']
+    })
+    CFonts.say('Bot', {
+    font: 'block',
+    align: 'center',
+    gradient: ['green', 'magenta']
+    })
+    CFonts.say('Por @ny.lucax', {
+    font: 'console',
+    align: 'center',
+    gradient: ['red', 'magenta']
+    })
+    CFonts.say('---------------------------- LOGS ----------------------------', {
+    font: 'console',
+    align: 'center',
+    gradient: ['red', 'magenta']
+    })
     prefix = [
-        '!'
+        '$'
     ]
     var client = undefined;
 	
@@ -70,12 +91,46 @@ const { saveState, state } = useSingleFileAuthState('./session.json');
 				
                 switch (command) {
                 	
-                        case 'sendtext':
+                        case 'ajuda':
                         
-                            reply(`Text Here`)
-                            
+                        	const buttons = [
+								{buttonId: '$ajuda', buttonText: {displayText: "❔AJUDA"}, type: 1},
+								{buttonId: '$adesivo', buttonText: {displayText: "🌃 ADESIVOS "}, type: 1},
+								{buttonId: '$nextpage', buttonText: {displayText: "⏭️ PRÓXIMA PÁGINA "}, type: 1}
+							]
+					
+							const ajuda = {
+						
+							text: `Estou aqui para facilitar a criação de adesivos para WhatsApp, sem precisar de sair do próprio WhatsApp!\n\nConsigo atuar em grupos ou em conversas privadas!\n\nE além de conseguir fazer os adesivos convencionais, também sou capaz de fazer adesivos animados.\n\nPara começar, basta clicar em algumas das seguintes opções:`,
+							footerText: 'Não consegue ver os botões? Mande $notas',
+    						buttons: buttons,
+    						headerType: 1
+    
+							}
+							client.sendMessage(from, ajuda) 
+
                             break
+						
+						case 'nextpage':
+				
+							const buttons1 = [
+								{buttonId: '$faq', buttonText: {displayText: "📃PERGUNTAS FREQUENTES"}, type: 1},
+								{buttonId: '$doação', buttonText: {displayText: "💰 DOAÇÕES "}, type: 1},
+								{buttonId: '$info', buttonText: {displayText: "📄 INFORMAÇÕES "}, type: 1}
+							]
+
+							const nextpage = {
+								text: `Estou aqui para facilitar a criação de adesivos para WhatsApp, sem precisar de sair do próprio WhatsApp!\n\nConsigo atuar em grupos ou em conversas privadas!\n\nE além de conseguir fazer os adesivos convencionais, também sou capaz de fazer adesivos animados.\n\nPara começar, basta clicar em ajuda e escolher algumas dos seguintes opções:`,
+								footerText: 'Não consegue ver os botões? Mande $notas',
+    							buttons: buttons1,
+    							headerType: 1
+							}
+							client.sendMessage(from, nextpage) 
+							break
+
 						}
+				
+					
                 
 
             } catch (err) {
