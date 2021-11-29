@@ -8,7 +8,8 @@ const {
     MediaType,
     MessageOptions,
     Mimetype,
-    DisconnectReason
+    DisconnectReason,
+    downloadContentFromMessage
 } = require('@adiwajshing/baileys-md')
 var pino = require("pino");
 var baileys = require("@adiwajshing/baileys-md");
@@ -17,6 +18,24 @@ const fs = require('fs')
 const moment = require('moment-timezone')
 const chalk = require('chalk')
 const CFonts  = require('cfonts')
+const express = require('express');
+const {
+	Sticker,
+	createSticker,
+	StickerTypes
+} = require('wa-sticker-formatter')
+
+const app = express();
+
+app.get("/", (request, response) => {
+  
+	const ping = new Date();
+	ping.setHours(ping.getHours() - 3);
+	console.log(`Ping recebido às ${ping.getUTCHours()}:${ping.getUTCMinutes()}:${ping.getUTCSeconds()}`)
+	response.sendStatus(200);
+			
+	});
+	app.listen(process.env.PORT); 
 
 
 const { help } = require('./database/menu/help')
@@ -36,6 +55,10 @@ function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+const getRandom = (ext) => {
+	return `${Math.floor(Math.random() * 10000)}${ext}`
 }
 
 const { saveState, state } = useSingleFileAuthState('./database/auth.json');
@@ -97,11 +120,15 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
                                     msg.message.listResponseMessage.singleSelectReply.selectedRowId : ''
 
                 const isMedia = type.includes('videoMessage') || type.includes('imageMessage') || type.includes('stickerMessage') || type.includes('audioMessage') || type.includes('documentMessage')
-
+				const isVideo = type.includes('videoMessage')
+				const isImage = type.includes('imageMessage')
+				
                 const isCmd = prefix.includes(body != '' && body.slice(0, 1)) && body.slice(1) != ''
                 const command = isCmd ? body.slice(1).trim().split(' ')[0].toLowerCase() : ''
                 const args = body.trim().split(/ +/).slice(1)
                 const isGroup = from.endsWith('@g.us')
+                const getNumber = from.split('@')[0]
+                
                 const pushname = msg.pushName || "Sem Nome"
 
                 const groupMetadata = isGroup ? await client.groupMetadata(from) : ''
@@ -112,6 +139,12 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
                 }
 				
                 switch (command) {
+                	
+                		case 'test':
+                
+                		reply(getNumber)
+                
+                		break
                 	
                         case 'ajuda':
                         
@@ -184,6 +217,194 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 							reply(`${pix}`)
 							
 							break
+						
+						case 'adesivo':
+						case 'sticker':
+						
+							if (!isMedia) {
+						
+								reply(`Olá ${pushname}!\n\nEstá tentando criar um adesivo?\n\nEstamos com um novo sistema de adesivos, em chats privados você pode apenas enviar a imagem, vídeo ou gif, que iremos processar sua requisição imediatamente.\n\nJá em grupos, você deve adicionar $sticker ou $adesivos na legenda do arquivo para que possamos reconhecer sua requisição.` )
+							
+							} 
+						
+							if (isMedia && isImage) {
+
+       						 const stream = await downloadContentFromMessage(msg.message.imageMessage, 'image')
+       						 reply('Iniciando Requisição...')
+       
+       						 let buffer = Buffer.from([]);
+       
+    						    for await(const chunk of stream) {
+        					    buffer = Buffer.concat([buffer, chunk]);
+       						 }
+       						 const media = `./${getNumber}.jpeg`
+      						  // save to file
+       						 fs.writeFileSync(media, buffer)
+       
+       						const sticker = new Sticker(`./${getNumber}.jpeg`, {
+   							pack: pushname, // The pack name
+    					   	author: '@NyxBot_', // The author name
+    						   type: StickerTypes.FULL, // The sticker typeg
+    						   categories: ['🤩', '🎉'], // The sticker category
+ 						      id: `${getNumber}`, // The sticker id
+   							quality: 50, // The quality of the output file
+   							background: '#00000000' // The sticker background color (only for full stickers)
+							   })
+
+							  const save = await sticker.toBuffer() // convert to buffer
+
+							  await sticker.toFile(`${getNumber}.webp`)
+
+							  client.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
+							
+							  try {
+											
+									fs.unlinkSync(getNumber + ".jpeg" );
+									await sleep(500)
+									fs.unlinkSync(getNumber + ".webp" );
+									
+								} catch (error) {
+									reply("😵 Calma aí, não consigo processar tudo isso ao mesmo tempo, vamos com calma!")
+								}
+							
+							}
+							if (isMedia && isVideo && msg.message.videoMessage.seconds > 9) {
+								
+								reply('Indentificamos que o tamanho do vídeo requisitado é muito grande, mande no máximo um vídeo de nove segundos para que possamos reconhecê-lo!')
+								
+							}else if (isMedia && isVideo && msg.message.videoMessage.seconds < 10 )  {
+
+       						 const stream = await downloadContentFromMessage(msg.message.videoMessage, 'video')
+       						 reply('Iniciando Requisição...')
+								reply('Esse processo costuma demora, por favor tenha paciência.\nEnquanto isso, visite nosso Instagram: https://www.instagram.com/nyxbot_/')
+       						 let buffers = Buffer.from([]);
+       
+    						    for await(const chunk of stream) {
+        					    buffers = Buffer.concat([buffers, chunk]);
+       						 }
+       						 const mediaa = `./${getNumber}.mp4`
+      						  // save to file
+       						 fs.writeFileSync(mediaa, buffers)
+       
+       						const sticker = new Sticker(`./${getNumber}.mp4`, {
+   							pack: pushname, // The pack name
+    					   	author: '@NyxBot_', // The author name
+    						   type: StickerTypes.FULL, // The sticker typeg
+    						   categories: ['🤩', '🎉'], // The sticker category
+ 						      id: `${getNumber}`, // The sticker id
+   							quality: 50, // The quality of the output file
+   							background: '#00000000' // The sticker background color (only for full stickers)
+							   })
+
+							  const save = await sticker.toBuffer() // convert to buffer
+
+							  await sticker.toFile(`${getNumber}.webp`)
+
+							  client.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
+							  
+							  try {
+											
+									fs.unlinkSync(getNumber + ".mp4" );
+									await sleep(500)
+									fs.unlinkSync(getNumber + ".webp" );
+									
+								} catch (error) {
+									reply("😵 Calma aí, não consigo processar tudo isso ao mesmo tempo, vamos com calma!")
+								}
+							
+						   }
+						   
+						break
+						case '':
+						
+							if (isMedia && isImage) {
+
+       						 const stream = await downloadContentFromMessage(msg.message.imageMessage, 'image')
+       						 reply('Iniciando Requisição...')
+       
+       						 let buffer = Buffer.from([]);
+       
+    						    for await(const chunk of stream) {
+        					    buffer = Buffer.concat([buffer, chunk]);
+       						 }
+       						 const media = `./${getNumber}.jpeg`
+      						  // save to file
+       						 fs.writeFileSync(media, buffer)
+       
+       						const sticker = new Sticker(`./${getNumber}.jpeg`, {
+   							pack: pushname, // The pack name
+    					   	author: '@NyxBot_', // The author name
+    						   type: StickerTypes.FULL, // The sticker typeg
+    						   categories: ['🤩', '🎉'], // The sticker category
+ 						      id: `${getNumber}`, // The sticker id
+   							quality: 50, // The quality of the output file
+   							background: '#00000000' // The sticker background color (only for full stickers)
+							   })
+
+							  const save = await sticker.toBuffer() // convert to buffer
+
+							  await sticker.toFile(`${getNumber}.webp`)
+
+							  client.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
+							
+							  try {
+											
+									fs.unlinkSync(getNumber + ".jpeg" );
+									await sleep(500)
+									fs.unlinkSync(getNumber + ".webp" );
+									
+								} catch (error) {
+									reply("😵 Calma aí, não consigo processar tudo isso ao mesmo tempo, vamos com calma!")
+								}
+							
+							}
+							if (isMedia && isVideo && msg.message.videoMessage.seconds > 9) {
+								
+								reply('Indentificamos que o tamanho do vídeo requisitado é muito grande, mande no máximo um vídeo de nove segundos para que possamos reconhecê-lo!')
+								
+							}else if (isMedia && isVideo && msg.message.videoMessage.seconds < 10 )  {
+
+       						 const stream = await downloadContentFromMessage(msg.message.videoMessage, 'video')
+       						 reply('Iniciando Requisição...')
+								reply('Esse processo costuma demora, por favor tenha paciência.\nEnquanto isso, visite nosso Instagram: https://www.instagram.com/nyxbot_/')
+       						 let buffers = Buffer.from([]);
+       
+    						    for await(const chunk of stream) {
+        					    buffers = Buffer.concat([buffers, chunk]);
+       						 }
+       						 const mediaa = `./${getNumber}.mp4`
+      						  // save to file
+       						 fs.writeFileSync(mediaa, buffers)
+       
+       						const sticker = new Sticker(`./${getNumber}.mp4`, {
+   							pack: pushname, // The pack name
+    					   	author: 'NyxBot', // The author name
+    						   type: StickerTypes.FULL, // The sticker typeg
+    						   categories: ['🤩', '🎉'], // The sticker category
+ 						      id: `${getNumber}`, // The sticker id
+   							quality: 50, // The quality of the output file
+   							background: '#00000000' // The sticker background color (only for full stickers)
+							   })
+
+							  const save = await sticker.toBuffer() // convert to buffer
+
+							  await sticker.toFile(`${getNumber}.webp`)
+
+							  client.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
+							  
+							  try {
+											
+									fs.unlinkSync(getNumber + ".mp4" );
+									await sleep(500)
+									fs.unlinkSync(getNumber + ".webp" );
+									
+								} catch (error) {
+									reply("😵 Calma aí, não consigo processar tudo isso ao mesmo tempo, vamos com calma!")
+								}
+							
+						   }
+						   
+						break
 
 						}
 				
