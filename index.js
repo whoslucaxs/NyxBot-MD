@@ -124,7 +124,7 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 				const isImage = type.includes('imageMessage')
 				
                 const isCmd = prefix.includes(body != '' && body.slice(0, 1)) && body.slice(1) != ''
-                const command = isCmd ? body.slice(1).trim().split(' ')[0].toLowerCase() : ''
+                const command = body.replace(prefix, '').trim().split(/ +/).shift().toLowerCase()
                 const args = body.trim().split(/ +/).slice(1)
                 const isGroup = from.endsWith('@g.us')
                 const getNumber = from.split('@')[0]
@@ -133,6 +133,7 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 
                 const groupMetadata = isGroup ? await client.groupMetadata(from) : ''
                 const groupName = isGroup ? groupMetadata.subject : ''
+                global.prefix
                 
                 const reply = (mensagem) => {
                     client.sendMessage(from, { text: mensagem });
@@ -149,8 +150,8 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
                         case 'ajuda':
                         
                         	const buttons = [
-								{buttonId: '$ajuda', buttonText: {displayText: "❔AJUDA"}, type: 1},
-								{buttonId: '$adesivo', buttonText: {displayText: "🌃 ADESIVOS "}, type: 1},
+								{buttonId: 'ajuda', buttonText: {displayText: "❔AJUDA"}, type: 1},
+								{buttonId: '$$adesivo', buttonText: {displayText: "🌃 ADESIVOS "}, type: 1},
 								{buttonId: '$nextpage', buttonText: {displayText: "⏭️ PRÓXIMA PÁGINA "}, type: 1}
 							]
 					
@@ -220,6 +221,12 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 						
 						case 'adesivo':
 						case 'sticker':
+						
+							if (!isGroup) {
+								
+								reply(`Olá ${pushname}\n\nVocê sabia que em conversas privadas não precisa adicionar ($sticker) na descrição da mídia?\n\nBasta você enviar apenas a mídia que Imediatamente iremos reconhecer sua requisição!`)
+								
+							}
 						
 							if (!isMedia) {
 						
@@ -317,37 +324,39 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 						break
 						case '':
 						
-							if (isMedia && isImage) {
+							if (!isGroup) {
+						
+								if (isMedia && isImage) {
 
-       						 const stream = await downloadContentFromMessage(msg.message.imageMessage, 'image')
-       						 reply('Iniciando Requisição...')
+       							 const stream = await downloadContentFromMessage(msg.message.imageMessage, 'image')
+       							 reply('Iniciando Requisição...')
        
-       						 let buffer = Buffer.from([]);
+       							 let buffer = Buffer.from([]);
        
-    						    for await(const chunk of stream) {
-        					    buffer = Buffer.concat([buffer, chunk]);
-       						 }
-       						 const media = `./${getNumber}.jpeg`
-      						  // save to file
-       						 fs.writeFileSync(media, buffer)
+    							    for await(const chunk of stream) {
+        						    buffer = Buffer.concat([buffer, chunk]);
+       							 }
+       							 const media = `./${getNumber}.jpeg`
+      						 	 // save to file
+       							 fs.writeFileSync(media, buffer)
        
-       						const sticker = new Sticker(`./${getNumber}.jpeg`, {
-   							pack: pushname, // The pack name
-    					   	author: '@NyxBot_', // The author name
-    						   type: StickerTypes.FULL, // The sticker typeg
-    						   categories: ['🤩', '🎉'], // The sticker category
- 						      id: `${getNumber}`, // The sticker id
-   							quality: 50, // The quality of the output file
-   							background: '#00000000' // The sticker background color (only for full stickers)
-							   })
+       							const sticker = new Sticker(`./${getNumber}.jpeg`, {
+   								pack: pushname, // The pack name
+    					  	 	author: '@NyxBot_', // The author name
+    							   type: StickerTypes.FULL, // The sticker typeg
+    							   categories: ['🤩', '🎉'], // The sticker category
+ 						   	   id: `${getNumber}`, // The sticker id
+   								quality: 50, // The quality of the output file
+   								background: '#00000000' // The sticker background color (only for full stickers)
+								   })
 
-							  const save = await sticker.toBuffer() // convert to buffer
+							 	 const save = await sticker.toBuffer() // convert to buffer
 
-							  await sticker.toFile(`${getNumber}.webp`)
+								  await sticker.toFile(`${getNumber}.webp`)
 
-							  client.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
+								  client.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
 							
-							  try {
+								  try {
 											
 									fs.unlinkSync(getNumber + ".jpeg" );
 									await sleep(500)
@@ -401,9 +410,8 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 								} catch (error) {
 									reply("😵 Calma aí, não consigo processar tudo isso ao mesmo tempo, vamos com calma!")
 								}
-							
 						   }
-						   
+						}
 						break
 
 						}
