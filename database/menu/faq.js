@@ -1,4 +1,4 @@
-const faq = (pushname, botName) => {
+const faq = (pushname) => {
         return `  
 Olá ${pushname}! 
 
@@ -14,9 +14,7 @@ R: Não, pois não iremos reconhecer seu pedido para evitar queda do bot.
 R: Não é sempre e o bot fica online, podemos estar fazendo alterações no código ou indisponível no momento. 
 
 Não achou a solução do seu problema? 
-Digite $info para obter ajuda em nossos Instagram. 
-
-Por: @nyxbot_ (https://instagram.com/nyxbot_)
+Entre em contato pelo nosso Instagram:
 `
 }
 exports.faq = faq

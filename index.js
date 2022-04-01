@@ -10,9 +10,9 @@ const {
     Mimetype,
     DisconnectReason,
     downloadContentFromMessage
-} = require('@adiwajshing/baileys-md')
+} = require('@adiwajshing/baileys')
 var pino = require("pino");
-var baileys = require("@adiwajshing/baileys-md");
+var makeWASocket  = require("@adiwajshing/baileys");
 const axios = require('axios').default
 const fs = require('fs')
 const moment = require('moment-timezone')
@@ -32,7 +32,7 @@ app.get("/", (request, response) => {
 	const ping = new Date();
 	ping.setHours(ping.getHours() - 3);
 	console.log(`Ping recebido às ${ping.getUTCHours()}:${ping.getUTCMinutes()}:${ping.getUTCSeconds()}`)
-	response.sendStatus(200);
+	response.send(`Ping recebido às ${ping.getUTCHours()}:${ping.getUTCMinutes()}:${ping.getUTCSeconds()}`);
 			
 	});
 	app.listen(process.env.PORT); 
@@ -80,18 +80,19 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
     align: 'center',
     gradient: ['red', 'magenta']
     })
-    CFonts.say('---------------------------- LOGS ----------------------------', {
+    CFonts.say('LOGS', {
     font: 'console',
     align: 'center',
     gradient: ['red', 'magenta']
     })
+    
     prefix = [
         '$'
     ]
-    var client = undefined;
+    var nyx = undefined;
 	
     var startSock = () => {
-        const client = baileys["default"]({
+        const nyx = makeWASocket["default"]({
             printQRInTerminal: true,
             browser: ['NyxBot Multi-Device', "Safari", "3.0"],
             logger: pino({ level: 'warn' }),
@@ -99,7 +100,7 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
         })
 
 
-        client.ev.on('messages.upsert', async m => {
+        nyx.ev.on('messages.upsert', async m => {
             try {
                 const msg = m.messages[0]
                 if (!msg.message) return
@@ -107,23 +108,21 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
                 if (!msg.message) return
                 if (msg.key && msg.key.remoteJid == 'status@broadcast') return
                 if (msg.key.fromMe) return
+				global.prefix
 
                 const from = msg.key.remoteJid
                 const type = Object.keys(msg.message)[0]
                 const time = moment.tz('America/Sao_Paulo').format('HH:mm:ss')
 
                 var body = (type === 'conversation') ? msg.message.conversation : (type == 'imageMessage') ?
-                    msg.message.imageMessage.caption : (type == 'videoMessage') ?
-                        msg.message.videoMessage.caption : (type == 'extendedTextMessage') ?
-                            msg.message.extendedTextMessage.text : (type == 'buttonsResponseMessage') ?
-                                msg.message.buttonsResponseMessage.selectedButtonId : (type == 'listResponseMessage') ?
-                                    msg.message.listResponseMessage.singleSelectReply.selectedRowId : ''
-
-                const isMedia = type.includes('videoMessage') || type.includes('imageMessage') || type.includes('stickerMessage') || type.includes('audioMessage') || type.includes('documentMessage')
-				const isVideo = type.includes('videoMessage')
-				const isImage = type.includes('imageMessage')
+      		  msg.message.imageMessage.caption : (type == 'videoMessage') ?
+        		msg.message.videoMessage.caption : (type == 'extendedTextMessage') ?
+     		   msg.message.extendedTextMessage.text : (type == 'messageContextInfo') || (type == 'buttonsResponseMessage') ?
+        		msg.message.buttonsResponseMessage.selectedButtonId : (type == 'templateButtonReplyMessage') ? 
+				msg.message.templateButtonReplyMessage.selectedId : (type == 'listResponseMessage') ?
+      		  msg.message.listResponseMessage.singleSelectReply.selectedRowId : ''
 				
-                const isCmd = prefix.includes(body != '' && body.slice(0, 1)) && body.slice(1) != ''
+                const isCmd = body.startsWith(prefix)
                 const command = body.replace(prefix, '').trim().split(/ +/).shift().toLowerCase()
                 const args = body.trim().split(/ +/).slice(1)
                 const isGroup = from.endsWith('@g.us')
@@ -131,90 +130,121 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
                 
                 const pushname = msg.pushName || "Sem Nome"
 
-                const groupMetadata = isGroup ? await client.groupMetadata(from) : ''
+                const groupMetadata = isGroup ? await nyx.groupMetadata(from) : ''
                 const groupName = isGroup ? groupMetadata.subject : ''
-                global.prefix
+                
+                const isMedia = type.includes('videoMessage') || type.includes('imageMessage') || type.includes('stickerMessage') || type.includes('audioMessage') || type.includes('documentMessage')
+				const isVideo = type.includes('videoMessage')
+				const isImage = type.includes('imageMessage')
                 
                 const reply = (mensagem) => {
-                    client.sendMessage(from, { text: mensagem });
+                    nyx.sendMessage(from, { text: mensagem });
                 }
+                
+                if (!isGroup && !isMedia && !isCmd) {
+                	
+                	const buttonsAjuda = [
+						{index: 1, urlButton: {displayText: 'Instagram', url: 'https://Instagram.com/nyxbot_'}},
+						{index: 2, quickReplyButton: {displayText: '❔AJUDA', id: '$ajuda'}},
+						{index: 3, quickReplyButton: {displayText: '🌃 ADESIVOS', id: '$sticker'}},
+						{index: 4, quickReplyButton: {displayText: '⏭️ PRÓXIMA PÁGINA', id: '$nextpage'}}
+					]
+
+					const ajuda = {
+						image: {url: "./database/media/help.jpg"},
+						text: "\nEstou aqui para facilitar a criação de adesivos para WhatsApp, sem precisar de sair do próprio WhatsApp!\n\nConsigo atuar em grupos ou em conversas privadas!\n\nE além de conseguir fazer os adesivos convencionais, também sou capaz de fazer adesivos animados.\n\nPara começar, basta clicar em algumas das seguintes opções:",
+						templateButtons: buttonsAjuda,
+						headerType: 4
+					}
+					nyx.sendMessage(from, ajuda)
+                	
+                }
+                
+                //debug option
+				//console.log(type)
 				
                 switch (command) {
                 	
-                		case 'test':
+                		case 'ping':
                 
-                		reply(getNumber)
+                			reply('pong!')
                 
                 		break
                 	
                         case 'ajuda':
                         
-                        	const buttons = [
-								{buttonId: 'ajuda', buttonText: {displayText: "❔AJUDA"}, type: 1},
-								{buttonId: '$$adesivo', buttonText: {displayText: "🌃 ADESIVOS "}, type: 1},
-								{buttonId: '$nextpage', buttonText: {displayText: "⏭️ PRÓXIMA PÁGINA "}, type: 1}
+                        	const buttonsHelp = [
+								{index: 1, urlButton: {displayText: 'Instagram', url: 'https://Instagram.com/nyxbot_'}},
+								{index: 2, quickReplyButton: {displayText: '❔AJUDA', id: '$ajuda'}},
+								{index: 3, quickReplyButton: {displayText: '🌃 ADESIVOS', id: '$sticker'}},
+								{index: 4, quickReplyButton: {displayText: '⏭️ PRÓXIMA PÁGINA', id: '$nextpage'}}
 							]
-					
-							const ajuda = {
-							image: {url: "./database/media/help.jpg"},
-							caption: `Estou aqui para facilitar a criação de adesivos para WhatsApp, sem precisar de sair do próprio WhatsApp!\n\nConsigo atuar em grupos ou em conversas privadas!\n\nE além de conseguir fazer os adesivos convencionais, também sou capaz de fazer adesivos animados.\n\nPara começar, basta clicar em algumas das seguintes opções:`,
-							footerText: 'Não consegue ver os botões? Mande $notas',
-    						buttons: buttons,
-    						headerType: 4
-    
+
+							const help = {
+								image: {url: "./database/media/help.jpg"},
+								text: "\nEstou aqui para facilitar a criação de adesivos para WhatsApp, sem precisar de sair do próprio WhatsApp!\n\nConsigo atuar em grupos ou em conversas privadas!\n\nE além de conseguir fazer os adesivos convencionais, também sou capaz de fazer adesivos animados.\n\nPara começar, basta clicar em algumas das seguintes opções:",
+								templateButtons: buttonsHelp,
+								headerType: 4
 							}
-							client.sendMessage(from, ajuda) 
+							nyx.sendMessage(from, help)
 
                             break
 						
 						case 'nextpage':
-				
-							const buttons1 = [
-								{buttonId: '$faq', buttonText: {displayText: "📃PERGUNTAS FREQUENTES"}, type: 1},
-								{buttonId: '$doação', buttonText: {displayText: "💰 DOAÇÕES "}, type: 1},
-								{buttonId: '$info', buttonText: {displayText: "📄 INFORMAÇÕES "}, type: 1}
+						
+							const buttonsNextPage = [
+								{index: 1, urlButton: {displayText: 'Instagram', url: 'https://Instagram.com/nyxbot_'}},
+								{index: 2, quickReplyButton: {displayText: '📃PERGUNTAS FREQUENTES', id: '$faq'}},
+								{index: 3, quickReplyButton: {displayText: '💰 DOAÇÕES', id: '$doação'}},
+								{index: 4, quickReplyButton: {displayText: '📄 INFORMAÇÕES', id: '$info'}}
 							]
 
 							const nextpage = {
 								image: {url: "./database/media/help.jpg"},
-								caption: `Estou aqui para facilitar a criação de adesivos para WhatsApp, sem precisar de sair do próprio WhatsApp!\n\nConsigo atuar em grupos ou em conversas privadas!\n\nE além de conseguir fazer os adesivos convencionais, também sou capaz de fazer adesivos animados.\n\nPara começar, basta clicar em ajuda e escolher algumas dos seguintes opções:`,
-								footerText: 'Não consegue ver os botões? Mande $notas',
-    							buttons: buttons1,
-    							headerType: 4
+								text: "\nEstou aqui para facilitar a criação de adesivos para WhatsApp, sem precisar de sair do próprio WhatsApp!\n\nConsigo atuar em grupos ou em conversas privadas!\n\nE além de conseguir fazer os adesivos convencionais, também sou capaz de fazer adesivos animados.\n\nPara começar, basta clicar em algumas das seguintes opções:",
+								templateButtons: buttonsNextPage,
+								headerType: 4
 							}
-							client.sendMessage(from, nextpage) 
+							nyx.sendMessage(from, nextpage)
+				
 							break
 						
 						case 'info':
-
-							const doacoes = [
-							
-							{buttonId: '$doação', buttonText: {displayText: "💰 DOAÇÕES "}, type: 1},
-							
-							]
-					
-							const sendDoacoes = {
 						
+							const buttonsInfo = [
+								{index: 1, urlButton: {displayText: 'Instagram', url: 'https://Instagram.com/nyxbot_'}},
+								{index: 2, quickReplyButton: {displayText: '💰 DOAÇÕES', id: '$doação'}}
+							]
+
+							const info = {
 								text: `${criador(pushname, botName, ownerName)}`,
-    							buttons: doacoes,
-    							headerType: 1
-    
+								templateButtons: buttonsInfo
 							}
-							client.sendMessage(from, sendDoacoes) 
+							nyx.sendMessage(from, info)
 							
 							break
 						
 						case 'faq':
-				
-							client.sendMessage(from, { text: faq(pushname)})
+							
+							const buttonsFaq = [
+                				{index: 1, urlButton: {displayText: 'Instagram', url: 'https://Instagram.com/nyxbot_'}},
+							]
+
+							const faqs = {
+								text: `${faq(pushname)}`,
+								templateButtons: buttonsFaq
+							}
+							nyx.sendMessage(from, faqs)
+							
+							
 							break
 						
 						case 'doação':
 					
-							client.sendMessage(from, { text: pix_txt(pushname, botName, ownerName)})
-							await sleep(150)
+							nyx.sendMessage(from, { text: pix_txt(pushname, botName, ownerName)})
+							await sleep(300)
 							reply("Chave Aleatória:")
-							await sleep(150)
+							await sleep(300)
 							reply(`${pix}`)
 							
 							break
@@ -250,11 +280,11 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
        
        						const sticker = new Sticker(`./${getNumber}.jpeg`, {
    							pack: pushname, // The pack name
-    					   	author: '@NyxBot_', // The author name
+    					   	author: '@nyxbot_', // The author name
     						   type: StickerTypes.FULL, // The sticker typeg
     						   categories: ['🤩', '🎉'], // The sticker category
  						      id: `${getNumber}`, // The sticker id
-   							quality: 50, // The quality of the output file
+   							quality: 40, // The quality of the output file
    							background: '#00000000' // The sticker background color (only for full stickers)
 							   })
 
@@ -262,7 +292,7 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 
 							  await sticker.toFile(`${getNumber}.webp`)
 
-							  client.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
+							  nyx.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
 							
 							  try {
 											
@@ -282,8 +312,18 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 							}else if (isMedia && isVideo && msg.message.videoMessage.seconds < 10 )  {
 
        						 const stream = await downloadContentFromMessage(msg.message.videoMessage, 'video')
-       						 reply('Iniciando Requisição...')
-								reply('Esse processo costuma demora, por favor tenha paciência.\nEnquanto isso, visite nosso Instagram: https://www.instagram.com/nyxbot_/')
+       
+       					 	const buttonUrl = [
+                					{index: 1, urlButton: {displayText: 'Instagram', url: 'https://Instagram.com/nyxbot_'}},
+								]
+
+								const buttonMessage = {
+									text: `\nIniciando Requisição...\n\nEsse processo costuma demora, por favor tenha paciência.\nEnquanto isso, visite nosso Instagram:`,
+									templateButtons: buttonUrl
+								}
+
+								nyx.sendMessage(from, buttonMessage)
+								
        						 let buffers = Buffer.from([]);
        
     						    for await(const chunk of stream) {
@@ -295,11 +335,11 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
        
        						const sticker = new Sticker(`./${getNumber}.mp4`, {
    							pack: pushname, // The pack name
-    					   	author: '@NyxBot_', // The author name
+    					   	author: '@nyxbot_', // The author name
     						   type: StickerTypes.FULL, // The sticker typeg
     						   categories: ['🤩', '🎉'], // The sticker category
  						      id: `${getNumber}`, // The sticker id
-   							quality: 50, // The quality of the output file
+   							quality: 40, // The quality of the output file
    							background: '#00000000' // The sticker background color (only for full stickers)
 							   })
 
@@ -307,7 +347,7 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 
 							  await sticker.toFile(`${getNumber}.webp`)
 
-							  client.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
+							  nyx.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
 							  
 							  try {
 											
@@ -342,11 +382,11 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
        
        							const sticker = new Sticker(`./${getNumber}.jpeg`, {
    								pack: pushname, // The pack name
-    					  	 	author: '@NyxBot_', // The author name
+    					  	 	author: '@nyxbot_', // The author name
     							   type: StickerTypes.FULL, // The sticker typeg
     							   categories: ['🤩', '🎉'], // The sticker category
  						   	   id: `${getNumber}`, // The sticker id
-   								quality: 50, // The quality of the output file
+   								quality: 40, // The quality of the output file
    								background: '#00000000' // The sticker background color (only for full stickers)
 								   })
 
@@ -354,7 +394,7 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 
 								  await sticker.toFile(`${getNumber}.webp`)
 
-								  client.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
+								  nyx.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
 							
 								  try {
 											
@@ -374,8 +414,18 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 							}else if (isMedia && isVideo && msg.message.videoMessage.seconds < 10 )  {
 
        						 const stream = await downloadContentFromMessage(msg.message.videoMessage, 'video')
-       						 reply('Iniciando Requisição...')
-								reply('Esse processo costuma demora, por favor tenha paciência.\nEnquanto isso, visite nosso Instagram: https://www.instagram.com/nyxbot_/')
+       
+								const buttonUrl = [
+                					{index: 1, urlButton: {displayText: 'Instagram', url: 'https://Instagram.com/nyxbot_'}},
+								]
+
+								const buttonMessage = {
+									text: `\nIniciando Requisição...\n\nEsse processo costuma demora, por favor tenha paciência.\nEnquanto isso, visite nosso Instagram:`,
+									templateButtons: buttonUrl
+								}
+
+								nyx.sendMessage(from, buttonMessage)
+								
        						 let buffers = Buffer.from([]);
        
     						    for await(const chunk of stream) {
@@ -387,11 +437,11 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
        
        						const sticker = new Sticker(`./${getNumber}.mp4`, {
    							pack: pushname, // The pack name
-    					   	author: 'NyxBot', // The author name
+    					   	author: '@nyxbot_', // The author name
     						   type: StickerTypes.FULL, // The sticker typeg
     						   categories: ['🤩', '🎉'], // The sticker category
  						      id: `${getNumber}`, // The sticker id
-   							quality: 50, // The quality of the output file
+   							quality: 40, // The quality of the output file
    							background: '#00000000' // The sticker background color (only for full stickers)
 							   })
 
@@ -399,7 +449,7 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 
 							  await sticker.toFile(`${getNumber}.webp`)
 
-							  client.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
+							  nyx.sendMessage(from, { sticker: { url: getNumber + ".webp" }})
 							  
 							  try {
 											
@@ -423,31 +473,36 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
                 console.log(err)
             }
         })
-        client.ev.on('group-participants.update', async (update) => {
+        nyx.ev.on('group-participants.update', async (update) => {
 	     try {
 		console.log(update)
 	     } catch (error) {
 		console.log(error)
 	     }
         })
-        return client
+        return nyx
     }
 
-    client = startSock()
-    client.ev.on('connection.update', (update) => {
+    nyx = startSock()
+    nyx.ev.on('connection.update', async (update) =>
+    {
         const { connection, lastDisconnect } = update
-        if (connection === 'close') {
-            // reconnect if not logged out
-            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut
-            console.log('connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect)
-            // reconnect if not logged out
-            if(shouldReconnect) {
-                sock = startSock()
-            }
+       
+        if (connection === 'close')
+        {
+
+			const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut
+            lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut ? startSock() : console.log('connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect)
         }
-        console.log('Connection Update: ', update)
+
+        console.log('Conexão atualizada', update)
+
     })
 
-    // auto save dos dados da sessão
-    client.ev.on('auth-state.update', () => saveState)
+    // Esculta e atualizar as credências no arquivo tokens.json
+    nyx.ev.on('creds.update', saveState);
+
+    return nyx;
+   
+
 })()

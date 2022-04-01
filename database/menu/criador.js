@@ -9,13 +9,6 @@ Esse projeto está sendo desenvolvido por uma única pessoa e o projeto recebe a
 Você também pode apoiar esse projeto fazendo doações via pix, basta clicar no botão abaixo.
 
 Caso precise de ajuda ou encontrou algum erro, recomendamos que entre em contato com o suporte pelo nosso Instagram:
-
-- > ${botName}:
-@nyxbot_(https://instagram.com/nyxbot_)
-
-- > Desenvolvedor: 
-@ny.lucax(https://instagram.com/ny.lucax) 
-
 `
 }
 exports.criador = criador

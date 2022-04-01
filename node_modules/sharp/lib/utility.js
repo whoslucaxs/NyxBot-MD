@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const events = require('events');
 const detectLibc = require('detect-libc');
 
@@ -28,11 +30,11 @@ const interpolators = {
   bilinear: 'bilinear',
   /** [Bicubic interpolation](http://en.wikipedia.org/wiki/Bicubic_interpolation) (the default). */
   bicubic: 'bicubic',
-  /** [LBB interpolation](https://github.com/jcupitt/libvips/blob/master/libvips/resample/lbb.cpp#L100). Prevents some "[acutance](http://en.wikipedia.org/wiki/Acutance)" but typically reduces performance by a factor of 2. */
+  /** [LBB interpolation](https://github.com/libvips/libvips/blob/master/libvips/resample/lbb.cpp#L100). Prevents some "[acutance](http://en.wikipedia.org/wiki/Acutance)" but typically reduces performance by a factor of 2. */
   locallyBoundedBicubic: 'lbb',
   /** [Nohalo interpolation](http://eprints.soton.ac.uk/268086/). Prevents acutance but typically reduces performance by a factor of 3. */
   nohalo: 'nohalo',
-  /** [VSQBS interpolation](https://github.com/jcupitt/libvips/blob/master/libvips/resample/vsqbs.cpp#L48). Prevents "staircasing" when enlarging. */
+  /** [VSQBS interpolation](https://github.com/libvips/libvips/blob/master/libvips/resample/vsqbs.cpp#L48). Prevents "staircasing" when enlarging. */
   vertexSplitQuadraticBasisSpline: 'vsqbs'
 };
 
@@ -47,7 +49,22 @@ let versions = {
 };
 try {
   versions = require(`../vendor/${versions.vips}/${platformAndArch}/versions.json`);
-} catch (err) {}
+} catch (_err) { /* ignore */ }
+
+/**
+ * An Object containing the platform and architecture
+ * of the current and installed vendored binaries.
+ * @member
+ * @example
+ * console.log(sharp.vendor);
+ */
+const vendor = {
+  current: platformAndArch,
+  installed: []
+};
+try {
+  vendor.installed = fs.readdirSync(path.join(__dirname, `../vendor/${versions.vips}`));
+} catch (_err) { /* ignore */ }
 
 /**
  * Gets or, when options are provided, sets the limits of _libvips'_ operation cache.
@@ -111,7 +128,7 @@ function concurrency (concurrency) {
   return sharp.concurrency(is.integer(concurrency) ? concurrency : null);
 }
 /* istanbul ignore next */
-if (detectLibc.family === detectLibc.GLIBC && !sharp._isUsingJemalloc()) {
+if (detectLibc.familySync() === detectLibc.GLIBC && !sharp._isUsingJemalloc()) {
   // Reduce default concurrency to 1 when using glibc memory allocator
   sharp.concurrency(1);
 }
@@ -176,5 +193,6 @@ module.exports = function (Sharp) {
   Sharp.format = format;
   Sharp.interpolators = interpolators;
   Sharp.versions = versions;
+  Sharp.vendor = vendor;
   Sharp.queue = queue;
 };
