@@ -2,4 +2,3 @@
 
 clear
 node .
-bash main.sh

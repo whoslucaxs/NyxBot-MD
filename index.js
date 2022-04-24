@@ -13,7 +13,7 @@ const {
 } = require('@adiwajshing/baileys')
 var pino = require("pino");
 var makeWASocket  = require("@adiwajshing/baileys");
-const axios = require('axios').default
+//const axios = require('axios').default
 const fs = require('fs')
 const moment = require('moment-timezone')
 const chalk = require('chalk')
@@ -76,11 +76,6 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
     gradient: ['green', 'magenta']
     })
     CFonts.say('Por @ny.lucax', {
-    font: 'console',
-    align: 'center',
-    gradient: ['red', 'magenta']
-    })
-    CFonts.say('LOGS', {
     font: 'console',
     align: 'center',
     gradient: ['red', 'magenta']
@@ -279,14 +274,14 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
        						 fs.writeFileSync(media, buffer)
        
        						const sticker = new Sticker(`./${getNumber}.jpeg`, {
-   							pack: pushname, // The pack name
-    					   	author: '@nyxbot_', // The author name
-    						   type: StickerTypes.FULL, // The sticker typeg
-    						   categories: ['🤩', '🎉'], // The sticker category
- 						      id: `${getNumber}`, // The sticker id
-   							quality: 40, // The quality of the output file
-   							background: '#00000000' // The sticker background color (only for full stickers)
-							   })
+   								pack: pushname, // The pack name
+    					   		author: '@nyxbot_', // The author name
+    							type: StickerTypes.FULL, // The sticker typeg
+    							categories: ['🤩', '🎉'], // The sticker category
+ 						    	id: `${getNumber}`, // The sticker id
+   								quality: 10, // The quality of the output file
+   								background: '#00000000' // The sticker background color (only for full stickers)
+							})
 
 							  const save = await sticker.toBuffer() // convert to buffer
 
@@ -334,14 +329,14 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
        						 fs.writeFileSync(mediaa, buffers)
        
        						const sticker = new Sticker(`./${getNumber}.mp4`, {
-   							pack: pushname, // The pack name
-    					   	author: '@nyxbot_', // The author name
-    						   type: StickerTypes.FULL, // The sticker typeg
-    						   categories: ['🤩', '🎉'], // The sticker category
- 						      id: `${getNumber}`, // The sticker id
-   							quality: 40, // The quality of the output file
-   							background: '#00000000' // The sticker background color (only for full stickers)
-							   })
+   								pack: pushname, // The pack name
+    					   		author: '@nyxbot_', // The author name
+    							type: StickerTypes.FULL, // The sticker typeg
+    							categories: ['🤩', '🎉'], // The sticker category
+ 						   		id: `${getNumber}`, // The sticker id
+   								quality: 10, // The quality of the output file
+   								background: '#00000000' // The sticker background color (only for full stickers)
+							})
 
 							  const save = await sticker.toBuffer() // convert to buffer
 
@@ -381,14 +376,14 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
        							 fs.writeFileSync(media, buffer)
        
        							const sticker = new Sticker(`./${getNumber}.jpeg`, {
-   								pack: pushname, // The pack name
-    					  	 	author: '@nyxbot_', // The author name
-    							   type: StickerTypes.FULL, // The sticker typeg
-    							   categories: ['🤩', '🎉'], // The sticker category
- 						   	   id: `${getNumber}`, // The sticker id
-   								quality: 40, // The quality of the output file
-   								background: '#00000000' // The sticker background color (only for full stickers)
-								   })
+   									pack: pushname, // The pack name
+    					  	 		author: '@nyxbot_', // The author name
+    								type: StickerTypes.FULL, // The sticker typeg
+    							 	categories: ['🤩', '🎉'], // The sticker category
+ 						   	    	id: `${getNumber}`, // The sticker id
+   									quality: 10, // The quality of the output file
+   									background: '#00000000' // The sticker background color (only for full stickers)
+								})
 
 							 	 const save = await sticker.toBuffer() // convert to buffer
 
@@ -436,14 +431,14 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
        						 fs.writeFileSync(mediaa, buffers)
        
        						const sticker = new Sticker(`./${getNumber}.mp4`, {
-   							pack: pushname, // The pack name
-    					   	author: '@nyxbot_', // The author name
-    						   type: StickerTypes.FULL, // The sticker typeg
-    						   categories: ['🤩', '🎉'], // The sticker category
- 						      id: `${getNumber}`, // The sticker id
-   							quality: 40, // The quality of the output file
-   							background: '#00000000' // The sticker background color (only for full stickers)
-							   })
+   								pack: pushname, // The pack name
+    					   		author: '@nyxbot_', // The author name
+    							type: StickerTypes.FULL, // The sticker typeg
+    							categories: ['🤩', '🎉'], // The sticker category
+ 						    	id: `${getNumber}`, // The sticker id
+   								quality: 10, // The quality of the output file
+   								background: '#00000000' // The sticker background color (only for full stickers)
+							})
 
 							  const save = await sticker.toBuffer() // convert to buffer
 
@@ -499,7 +494,7 @@ const { saveState, state } = useSingleFileAuthState('./database/auth.json');
 
     })
 
-    // Esculta e atualizar as credências no arquivo tokens.json
+    // Esculta e atualizar as credências no arquivo auth.json
     nyx.ev.on('creds.update', saveState);
 
     return nyx;
